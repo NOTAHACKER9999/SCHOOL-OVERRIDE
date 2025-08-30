@@ -2,40 +2,72 @@
 <html lang="en">
 
 <head>
-    <base href="https://cdn.jsdelivr.net/gh/genizy/web-port@main/buckshot-roulette/">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
-    <title>Buckshot Roulette</title>
+    <title>Buckshot Roulette (Iframe)</title>
     <link rel="stylesheet" href="style.css">
-    <link id="-gd-engine-icon" rel="icon" type="image/png" href="buckshot-roulette.icon.png" />
+    <link rel="icon" type="image/png" href="buckshot-roulette.icon.png" />
     <link rel="apple-touch-icon" href="buckshot-roulette.apple-touch-icon.png" />
+    <style>
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: black;
+        }
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #loading-text {
+            color: white;
+            font-family: cursive;
+            font-size: 48px;
+            text-align: center;
+            position: absolute;
+            top: 40%;
+            width: 100%;
+        }
+        #status {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
 </head>
 
 <body>
-    <script src="main.js"></script>
-    <div id="loading-text" style="color: white; font-family: cursive; font-size: 48px; text-align: center; margin-top: 20px;">LOADING...</div>
-    <canvas id="canvas"> Your browser does not support the canvas tag. </canvas>
-    <noscript> Your browser does not support JavaScript. </noscript>
+    <div id="loading-text">LOADING...</div>
+    <canvas id="canvas">Your browser does not support the canvas tag.</canvas>
     <div id="status">
-        <img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="buckshot-roulette.png" alt="">
+        <img id="status-splash" src="buckshot-roulette.png" alt="" style="max-width: 50%; margin-bottom: 20px;">
         <progress id="status-progress"></progress>
         <div id="status-notice"></div>
     </div>
+
     <script src="buckshot-roulette.js"></script>
     <script>
+        // Godot engine config for iframe
         const GODOT_CONFIG = {
-            "args": [],
-            "canvasResizePolicy": 2,
-            "ensureCrossOriginIsolationHeaders": false,
-            "executable": "buckshot-roulette",
-            "experimentalVK": false,
-            "fileSizes": {
+            args: [],
+            canvasResizePolicy: 2,
+            ensureCrossOriginIsolationHeaders: false, // disable iframe isolation requirement
+            executable: "buckshot-roulette",
+            experimentalVK: false,
+            fileSizes: {
                 "buckshot-roulette.pck": 344705792,
                 "buckshot-roulette.wasm": 43444261
             },
-            "focusCanvas": false,
-            "gdextensionLibs": []
+            focusCanvas: false,
+            gdextensionLibs: []
         };
+
         const GODOT_THREADS_ENABLED = false;
         const engine = new Engine(GODOT_CONFIG);
 
@@ -44,86 +76,39 @@
             const statusOverlay = document.getElementById('status');
             const statusProgress = document.getElementById('status-progress');
             const statusNotice = document.getElementById('status-notice');
+
             loadingText.remove();
-            let initializing = true;
-            let statusMode = '';
 
             function setStatusMode(mode) {
-                if (statusMode === mode || !initializing) {
-                    return;
-                }
                 if (mode === 'hidden') {
                     statusOverlay.remove();
-                    initializing = false;
                     return;
                 }
                 statusOverlay.style.visibility = 'visible';
                 statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
                 statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
-                statusMode = mode;
             }
 
             function setStatusNotice(text) {
-                while (statusNotice.lastChild) {
-                    statusNotice.removeChild(statusNotice.lastChild);
-                }
-                const lines = text.split('\n');
-                lines.forEach((line) => {
-                    statusNotice.appendChild(document.createTextNode(line));
-                    statusNotice.appendChild(document.createElement('br'));
-                });
+                statusNotice.textContent = text;
             }
 
             function displayFailureNotice(err) {
                 console.error(err);
-                if (err instanceof Error) {
-                    setStatusNotice(err.message);
-                } else if (typeof err === 'string') {
-                    setStatusNotice(err);
-                } else {
-                    setStatusNotice('An unknown error occurred.');
-                }
+                setStatusNotice(err instanceof Error ? err.message : err.toString());
                 setStatusMode('notice');
-                initializing = false;
             }
+
             const missing = Engine.getMissingFeatures({
                 threads: GODOT_THREADS_ENABLED,
             });
+
             if (missing.length !== 0) {
-                if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
-                    let serviceWorkerRegistrationPromise;
-                    try {
-                        serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
-                    } catch (err) {
-                        serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
-                    }
-                    // There's a chance that installing the service worker would fix the issue
-                    Promise.race([
-                        serviceWorkerRegistrationPromise.then((registration) => {
-                            if (registration != null) {
-                                return Promise.reject(new Error('Service worker already exists.'));
-                            }
-                            return registration;
-                        }).then(() => engine.installServiceWorker()),
-                        // For some reason, `getRegistration()` can stall
-                        new Promise((resolve) => {
-                            setTimeout(() => resolve(), 2000);
-                        }),
-                    ]).then(() => {
-                        // Reload if there was no error.
-                        window.location.reload();
-                    }).catch((err) => {
-                        console.error('Error while registering service worker:', err);
-                    });
-                } else {
-                    // Display the message as usual
-                    const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
-                    displayFailureNotice(missingMsg + missing.join('\n'));
-                }
+                displayFailureNotice("Missing required features:\n" + missing.join('\n'));
             } else {
                 setStatusMode('progress');
                 engine.startGame({
-                    'onProgress': function (current, total) {
+                    onProgress: function (current, total) {
                         if (current > 0 && total > 0) {
                             statusProgress.value = current;
                             statusProgress.max = total;
@@ -132,12 +117,11 @@
                             statusProgress.removeAttribute('max');
                         }
                     },
-                }).then(() => {
-                    setStatusMode('hidden');
-                }, displayFailureNotice);
+                }).then(() => setStatusMode('hidden'), displayFailureNotice);
             }
-        };
-        window.godotRunStart = run;
+        }
+
+        window.addEventListener("DOMContentLoaded", run);
     </script>
 </body>
 
