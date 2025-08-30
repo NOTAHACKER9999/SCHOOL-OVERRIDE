@@ -1,128 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
-    <title>Buckshot Roulette (Iframe)</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="buckshot-roulette.icon.png" />
-    <link rel="apple-touch-icon" href="buckshot-roulette.apple-touch-icon.png" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buckshot Roulette Iframe Loader</title>
     <style>
-        html, body {
-            margin: 0;
-            height: 100%;
-            background: black;
-        }
-        #canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        #loading-text {
-            color: white;
-            font-family: cursive;
-            font-size: 48px;
-            text-align: center;
-            position: absolute;
-            top: 40%;
-            width: 100%;
-        }
-        #status {
-            position: absolute;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
+        html, body, iframe { margin: 0; padding: 0; width: 100%; height: 100%; border: none; }
     </style>
 </head>
-
 <body>
-    <div id="loading-text">LOADING...</div>
-    <canvas id="canvas">Your browser does not support the canvas tag.</canvas>
-    <div id="status">
-        <img id="status-splash" src="buckshot-roulette.png" alt="" style="max-width: 50%; margin-bottom: 20px;">
-        <progress id="status-progress"></progress>
-        <div id="status-notice"></div>
-    </div>
+    <iframe id="gameFrame"></iframe>
 
-    <script src="buckshot-roulette.js"></script>
     <script>
-        // Godot engine config for iframe
-        const GODOT_CONFIG = {
-            args: [],
-            canvasResizePolicy: 2,
-            ensureCrossOriginIsolationHeaders: false, // disable iframe isolation requirement
-            executable: "buckshot-roulette",
-            experimentalVK: false,
-            fileSizes: {
-                "buckshot-roulette.pck": 344705792,
-                "buckshot-roulette.wasm": 43444261
-            },
-            focusCanvas: false,
-            gdextensionLibs: []
+        const iframe = document.getElementById('gameFrame');
+        iframe.src = "https://cdn.jsdelivr.net/gh/genizy/web-port@main/buckshot-roulette/index.html";
+
+        // Optional: resize the iframe dynamically if needed
+        iframe.onload = () => {
+            console.log("Game loaded in iframe!");
         };
-
-        const GODOT_THREADS_ENABLED = false;
-        const engine = new Engine(GODOT_CONFIG);
-
-        function run() {
-            const loadingText = document.getElementById('loading-text');
-            const statusOverlay = document.getElementById('status');
-            const statusProgress = document.getElementById('status-progress');
-            const statusNotice = document.getElementById('status-notice');
-
-            loadingText.remove();
-
-            function setStatusMode(mode) {
-                if (mode === 'hidden') {
-                    statusOverlay.remove();
-                    return;
-                }
-                statusOverlay.style.visibility = 'visible';
-                statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
-                statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
-            }
-
-            function setStatusNotice(text) {
-                statusNotice.textContent = text;
-            }
-
-            function displayFailureNotice(err) {
-                console.error(err);
-                setStatusNotice(err instanceof Error ? err.message : err.toString());
-                setStatusMode('notice');
-            }
-
-            const missing = Engine.getMissingFeatures({
-                threads: GODOT_THREADS_ENABLED,
-            });
-
-            if (missing.length !== 0) {
-                displayFailureNotice("Missing required features:\n" + missing.join('\n'));
-            } else {
-                setStatusMode('progress');
-                engine.startGame({
-                    onProgress: function (current, total) {
-                        if (current > 0 && total > 0) {
-                            statusProgress.value = current;
-                            statusProgress.max = total;
-                        } else {
-                            statusProgress.removeAttribute('value');
-                            statusProgress.removeAttribute('max');
-                        }
-                    },
-                }).then(() => setStatusMode('hidden'), displayFailureNotice);
-            }
-        }
-
-        window.addEventListener("DOMContentLoaded", run);
     </script>
 </body>
-
 </html>
