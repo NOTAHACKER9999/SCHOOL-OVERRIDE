@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+		<script type="text/javascript" src="app.js"></script>
+		<link rel="stylesheet" href="app.css" type="text/css" />
+
+<meta charset="UTF-8">
+<title>OVERRIDE GAMES</title>
+<style>
+    body {
+        margin: 0;
+        font-family: sans-serif;
+        background-color: #000;
+        color: #fff;
+        overflow: hidden;
+    }
+
+    /* Side Panel */
+    #sidePanel {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 300px;
+        height: 100%;
+        background-color: #111;
+        border-right: 2px solid #f00;
+        padding: 20px;
+        box-sizing: border-box;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #sidePanel h2 {
+        color: #f00;
+        margin-top: 0;
+        text-align: center;
+    }
+
+    #searchBar {
+        padding: 8px;
+        margin: 10px 0;
+        border: 1px solid #f00;
+        background-color: #222;
+        color: #f00;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #gameList {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .gameButton {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+        background-color: #222;
+        color: #f00;
+        border: 1px solid #f00;
+        cursor: pointer;
+        text-align: left;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+
+    .gameButton:hover {
+        background-color: #f00;
+        color: #000;
+    }
+
+    /* Home menu */
+    #homeMenu {
+        margin-left: 320px;
+        padding: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .homeGame {
+        width: 150px;
+        height: 60px;
+        background-color: #222;
+        border: 1px solid #f00;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f00;
+        cursor: pointer;
+        transition: 0.2s;
+        text-align: center;
+    }
+
+    .homeGame:hover {
+        background-color: #f00;
+        color: #000;
+    }
+
+    /* Overlay */
+    #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.95);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        flex-direction: column;
+    }
+
+    #closeBtn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 30px;
+        color: #f00;
+        cursor: pointer;
+        font-weight: bold;
+        z-index: 101;
+    }
+
+    #gameFrame {
+        width: 95%;
+        height: 95%;
+        border: none;
+        background-color: #000;
+    }
+
+</style>
+</head>
+<body>
+
+<div id="sidePanel">
+    <h2>Override Games</h2>
+    <input type="text" id="searchBar" placeholder="Search games...">
+    <div id="gameList"></div>
+</div>
+
+<div id="homeMenu"></div>
+
+<div id="overlay">
+    <div id="closeBtn">✖</div>
+    <iframe id="gameFrame"></iframe>
+</div>
+
+<script>
+// Your games array
+const games = [
+  // 1–50 CrazyGames iframe-friendly
+  { name: "Brainrots.io", url: "https://games.crazygames.com/en_US/italianbrainrotquiz-io/index.html?v=1.338" },
+  { name: "Space Waves", url: "https://games.crazygames.com/en_US/space-waves/index.html?v=1.338" },
+  { name: "Thief Puzzle", url: "https://games.crazygames.com/en_US/thief-puzzle/index.html?v=1.338" },
+  { name: "Man Runner 2048", url: "https://games.crazygames.com/en_US/man-runner-2048/index.html?v=1.338" },
+  { name: "Count Masters: Stickman Game", url: "https://games.crazygames.com/en_US/count-masters-stickman-games/index.html?v=1.338" },
+  { name: "Holey.io", url: "https://games.crazygames.com/en_US/holey-io-battle-royale/index.html?v=1.338" },
+  { name: "One Line", url: "https://games.crazygames.com/en_US/oneline/index.html?v=1.338" },
+  { name: "Slice Master", url: "https://games.crazygames.com/en_US/slice-master/index.html?v=1.338" },
+  { name: "Paper.io 2", url: "https://games.crazygames.com/en_US/paper-io-2/index.html?v=1.338" },
+  { name: "Cubes 2048.io", url: "https://games.crazygames.com/en_US/cubes-2048-io/index.html?v=1.338" },
+  { name: "Worms.io", url: "https://games.crazygames.com/en_US/worms-io/index.html?v=1.338" },
+  { name: "Snake.io", url: "https://games.crazygames.com/en_US/snake-io/index.html?v=1.338" },
+  { name: "Diep.io", url: "https://games.crazygames.com/en_US/diepio/index.html?v=1.338" },
+  { name: "Survev.io", url: "https://games.crazygames.com/en_US/survev/index.html?v=1.338" },
+  { name: "Fortzone", url: "https://games.crazygames.com/en_US/fortzone-battle-royale-xkd/index.html?v=1.338" },
+  { name: "Fragon", url: "https://games.crazygames.com/en_US/fragen/index.html?v=1.338" },
+  { name: "Command Strike FPS", url: "https://games.crazygames.com/en_US/command-strike-fps-iqh/index.html?v=1.338" },
+  { name: "Gangster Crimes Online 6", url: "https://games.crazygames.com/en_US/gangster-crimes-online-6-mafia-city/index.html?v=1.338" },
+  { name: "Racing Limits", url: "https://games.crazygames.com/en_US/racing-limits/index.html?v=1.338" },
+  { name: "Traffic Rider", url: "https://games.crazygames.com/en_US/traffic-rider-vvq/index.html?v=1.338" },
+  { name: "Super Star Car", url: "https://games.crazygames.com/en_US/super-star-car/index.html?v=1.338" },
+  { name: "Crazy Grand Prix", url: "https://games.crazygames.com/en_US/crazy-grand-prix/index.html?v=1.338" },
+  { name: "Rally Racer Dirt", url: "https://games.crazygames.com/en_US/rally-racer-dirt/index.html?v=1.338" },
+  { name: "Fighter Aircraft Pilot", url: "https://games.crazygames.com/en_US/fighter-aircraft-pilot/index.html?v=1.338" },
+  { name: "Attack of Duty", url: "https://games.crazygames.com/en_US/attack-of-duty/index.html?v=1.338" },
+  { name: "Warzone Armor", url: "https://games.crazygames.com/en_US/warzone-armor-gtb/index.html?v=1.338" },
+  { name: "Tanks Battlefield: Desert", url: "https://games.crazygames.com/en_US/tanks-battlefield-desert/index.html?v=1.338" },
+  { name: "3D Flight Simulator", url: "https://games.crazygames.com/en_US/3d-flight-simulator/index.html?v=1.338" },
+  { name: "Snow Rider 3D", url: "https://drippy-cat.github.io/snowrider3D/" },
+  { name: "8 Ball Billiards Classic", url: "https://games.crazygames.com/en_US/8-ball-billiards-classic/index.html?v=1.338" },
+  { name: "Crazy Flips 3D", url: "https://games.crazygames.com/en_US/crazy-flips-3d/index.html?v=1.338" },
+  { name: "8 Ball Billiards Multiplayer", url: "https://games.crazygames.com/en_US/8-ball-pool-billiards-multiplayer/index.html?v=1.338" },
+  { name: "Golf Orbit", url: "https://games.crazygames.com/en_US/golf-orbit/index.html?v=1.338" },
+  { name: "Unmatched Ego", url: "https://games.crazygames.com/en_US/unmatched-ego---soccer-action/index.html?v=1.338" },
+  { name: "Mini Golf Club", url: "https://games.crazygames.com/en_US/mini-golf-club/index.html?v=1.338" },
+  { name: "Basket Random", url: "https://games.crazygames.com/en_US/basket-random/index.html?v=1.338" },
+  { name: "The Speedy Golf", url: "https://games.crazygames.com/en_US/speedy-golf/index.html?v=1.338" },
+  { name: "Basketbros", url: "https://games.crazygames.com/en_US/basketbros/index.html?v=1.338" },
+  { name: "Baseball", url: "https://games.crazygames.com/en_US/baseball/index.html?v=1.338" },
+  { name: "QB Legend", url: "https://games.crazygames.com/en_US/qb-legend/index.html?v=1.338" },
+  { name: "Table Tennis World Tour", url: "https://games.crazygames.com/en_US/table-tennis-world-tour/index.html?v=1.338" },
+  { name: "Basketball Superstars", url: "https://games.crazygames.com/en_US/basketball-superstars/index.html?v=1.338" },
+  { name: "Wrestle Bros", url: "https://games.crazygames.com/en_US/wrestle-bros/index.html?v=1.338" },
+  { name: "3D Bowling", url: "https://games.crazygames.com/en_US/3d-bowling/index.html?v=1.338" },
+  { name: "Tap-Tap Shots", url: "https://games.crazygames.com/en_US/tap-tap-shots/index.html?v=1.338" },
+  { name: "Pixel Shooter", url: "https://games.crazygames.com/en_US/pixel-shooter/index.html?v=1.338" },
+  { name: "Real Fishing Sim", url: "https://games.crazygames.com/en_US/real-fishing-simulator/index.html?v=1.338" },
+  { name: "ESPN Arcade Baseball", url: "https://games.crazygames.com/en_US/espn-arcade-baseball/index.html?v=1.338" },
+  { name: "Basketball Orbit", url: "https://games.crazygames.com/en_US/basketball-orbit/index.html?v=1.338" },
+  { name: "Hotfoot Baseball", url: "https://games.crazygames.com/en_US/hotfoot-baseball/index.html?v=1.338" },
+
+  // 51–87 GitHub / srcdoc-ready
+  { name: "Buckshot Roulette", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/buckshot-roulette/index.html" },
+  { name: "Amanda the Adventurer", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/amanda-the-adventurer/index.html" },
+  { name: "Andys Apple Farm", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/andys-apple-farm/index.html" },
+  { name: "Baldi +", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/baldi-plus/index.html" },
+  { name: "Baldi Remaster", url: "https://github.com/genizy/web-port/blob/main/baldi-remaster/index.html" },
+  { name: "Bendy", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/bendy/index.html" },
+  { name: "BergenTruck", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/bergentruck/BERGENTRUCK_201X.html" },
+  { name: "BloodMoney", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/bloodmoney/index.html" },
+  { name: "Class of 09", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/class-of-09/index.html" },
+  { name: "Cuphead", url: "https://raw.githubusercontent.com/web-ports/cuphead/refs/heads/main/index.html" },
+  { name: "Dead Plate", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/dead-plate/index.html" },
+  { name: "Dead Seat", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/deadseat/index.html" },
+  { name: "Delta Rune", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/deltarune/index.html" },
+  { name: "Donttakethiscathome", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/donottakethiscathome/index.html" },
+  { name: "Fears to Fathom", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/fears-to-fathom/home-alone/index.html" },
+  { name: "Fanf 1", url: "https://raw.githubusercontent.com/genizy/fnaf/f2863bf695a80451c6c48c4bf8afafc3242d9601/1/index.html" },
+  { name: "Fanf 2", url: "https://raw.githubusercontent.com/genizy/fnaf/f2863bf695a80451c6c48c4bf8afafc3242d9601/2/index.html" },
+  { name: "Fanf 3", url: "https://raw.githubusercontent.com/genizy/fnaf/f2863bf695a80451c6c48c4bf8afafc3242d9601/3/index.html" },
+  { name: "Fanf 4-Halloween", url: "https://raw.githubusercontent.com/genizy/fnaf/f2863bf695a80451c6c48c4bf8afafc3242d9601/4-halloween/index.html" },
+  { name: "Fanf 4", url: "https://raw.githubusercontent.com/genizy/fnaf/f2863bf695a80451c6c48c4bf8afafc3242d9601/4/index.html" },
+  { name: "Fanf-ps", url: "https://raw.githubusercontent.com/genizy/fnaf/f2863bf695a80451c6c48c4bf8afafc3242d9601/ps/index.html" },
+  { name: "Fanf-sl", url: "https://github.com/genizy/fnaf/blob/f2863bf695a80451c6c48c4bf8afafc3242d9601/sl/index.html" },
+  { name: "Fanf-ucn", url: "https://raw.githubusercontent.com/genizy/fnaf/f2863bf695a80451c6c48c4bf8afafc3242d9601/ucn/index.html" },
+  { name: "Fanf-w", url: "https://raw.githubusercontent.com/genizy/fnaf/f2863bf695a80451c6c48c4bf8afafc3242d9601/w/index.html" },
+  { name: "Gacha Life 1", url: "https://scratch.mit.edu/projects/277539376/embed" },
+  { name: "Learn to Fly", url: "https://games.crazygames.com/en_US/learn-to-fly/index.html?v=1.338" },
+  { name: "Penalty Shooter 3", url: "https://games.crazygames.com/en_US/penalty-shooters-3/index.html?v=1.338" },
+  { name: "Sports Hero", url: "https://games.crazygames.com/en_US/sports-hero/index.html?v=1.338" },
+  { name: "Pool Hustlers", url: "https://games.crazygames.com/en_US/pool-hustlers/index.html?v=1.338" },
+  { name: "CarBall.io", url: "https://games.crazygames.com/en_US/carball-io/index.html?v=1.338" },
+  { name: "Axis Football League", url: "https://games.crazygames.com/en_US/axis-football-league/index.html?v=1.338" },
+  { name: "Cue Billard Club", url: "https://games.crazygames.com/en_US/cue-billiard-club/index.html?v=1.338" },
+  { name: "Boxing Random", url: "https://games.crazygames.com/en_US/boxing-random/index.html?v=1.338" },
+  { name: "Goalkeeper Wiz", url: "https://games.crazygames.com/en_US/goalkeeper-wiz/index.html?v=1.338" },
+  { name: "100 Meters Race", url: "https://games.crazygames.com/en_US/100-meters-race/index.html?v=1.338" },
+  { name: "Boxing", url: "https://games.crazygames.com/en_US/boxing/index.html?v=1.338" },
+  { name: "Basket Battle", url: "https://games.crazygames.com/en_US/basket-battle-zmg/index.html?v=1.338" },
+
+  // --- NEW GAMES ADDED ---
+  { name: "Hypper sandbox", url: "https://games.crazygames.com/en_US/hypper-sandbox/index.html?v=1.338" },
+  { name: "Time Shooter", url: "https://games.crazygames.com/en_US/time-shooter/index.html?v=1.338" },
+  { name: "Time Shooter 2", url: "https://games.crazygames.com/en_US/time-shooter-2/index.html?v=1.338" },
+  { name: "Time Shooter 3", url: "https://games.crazygames.com/en_US/time-shooter-3/index.html?v=1.338" },
+  { name: "Learn to fly 2", url: "https://raw.githubusercontent.com/CaDawnOfTheDead/learn-to-fly-2/refs/heads/main/index.html" },
+  { name: "Learn to fly 3", url: "https://ubg89.github.io/LearnToFly3/" },
+  { name: "People Playground", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/people-playground/index.html" },
+  { name: "Raft", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/raft/index.html" },
+  { name: "The Man From The Window", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/the-man-in-the-window/index.html" },
+  { name: "Ultra Kill", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/ultrakill/index.html" },
+  { name: "Undertell-Yellow", url: "https://raw.githubusercontent.com/genizy/web-port/refs/heads/main/undertale-yellow/index.html" },
+  { name: "Undertell", url: "https://github.com/genizy/web-port/blob/main/undertale/index.html" },
+  { name: "Pixel WarFare", url: "https://games.crazygames.com/en_US/pixel-warfare/index.html?v=1.338" },
+  { name: "Blocks.io", url: "https://games.crazygames.com/en_US/bloxdhop-io/index.html?v=1.338" }
+];
+
+
+// Elements
+const gameList = document.getElementById('gameList');
+const overlay = document.getElementById('overlay');
+const iframe = document.getElementById('gameFrame');
+const closeBtn = document.getElementById('closeBtn');
+const searchBar = document.getElementById('searchBar');
+const homeMenu = document.getElementById('homeMenu');
+
+// Populate side panel
+function populateSidePanel(filter="") {
+    gameList.innerHTML = "";
+    games.filter(g => g.name.toLowerCase().includes(filter.toLowerCase()))
+         .forEach(game => {
+        const btn = document.createElement('div');
+        btn.className = 'gameButton';
+        btn.innerText = game.name;
+        btn.dataset.url = game.url;
+        gameList.appendChild(btn);
+    });
+}
+
+// Populate home menu with random 20 games
+function populateHomeMenu() {
+    homeMenu.innerHTML = "";
+    const shuffled = [...games].sort(() => 0.5 - Math.random());
+    shuffled.slice(0, 20).forEach(game => {
+        const div = document.createElement('div');
+        div.className = 'homeGame';
+        div.innerText = game.name;
+        div.dataset.url = game.url;
+        homeMenu.appendChild(div);
+    });
+}
+
+// Initial population
+populateSidePanel();
+populateHomeMenu();
+
+// Search
+searchBar.addEventListener('input', e => {
+    populateSidePanel(e.target.value);
+});
+
+// Click handlers
+document.body.addEventListener('click', e => {
+    if(e.target.classList.contains('gameButton') || e.target.classList.contains('homeGame')){
+        const url = e.target.dataset.url;
+        if(url.includes("raw.githubusercontent.com")){
+            fetch(url)
+                .then(res => res.ok ? res.text() : Promise.reject("Failed to fetch"))
+                .then(html => {
+                    iframe.contentWindow.document.open();
+                    iframe.contentWindow.document.write(html);
+                    iframe.contentWindow.document.close();
+                    overlay.style.display = 'flex';
+                })
+                .catch(err => alert("Error loading game: " + err));
+        } else {
+            iframe.src = url;
+            overlay.style.display = 'flex';
+        }
+    }
+});
+
+// Close overlay
+closeBtn.addEventListener('click', () => {
+    overlay.style.display = 'none';
+    iframe.src = 'about:blank';
+    iframe.contentWindow.document.open();
+    iframe.contentWindow.document.write('');
+    iframe.contentWindow.document.close();
+});
+</script>
+
+</body>
+</html>
