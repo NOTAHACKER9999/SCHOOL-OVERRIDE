@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DARE TO GAME</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      font-family: monospace;
+    }
+
+    .glow {
+      color: black;
+      -webkit-text-stroke: 1px red; /* thinner outline */
+      text-shadow: 
+        0 0 3px red,
+        0 0 6px red,
+        0 0 12px red,
+        0 0 20px red;
+    }
+
+    .title {
+      font-size: 80px;
+      font-weight: bold;
+      margin: 0;
+      letter-spacing: 5px;
+    }
+
+    .subtitle {
+      font-size: 50px;
+      font-weight: bold;
+      margin-top: 30px;
+      transform: skewX(-20deg) rotate(-10deg);
+      color: red;
+      text-shadow: 0 0 5px red, 0 0 10px red, 0 0 20px red;
+    }
+
+    .buttons {
+      margin-top: 40px;
+      display: flex;
+      gap: 20px;
+    }
+
+    .buttons button {
+      background: black;
+      color: black;
+      font-size: 20px;
+      font-weight: bold;
+      padding: 12px 28px;
+      border: 2px solid red;
+      border-radius: 8px;
+      cursor: pointer;
+      -webkit-text-stroke: 1px red;
+      text-shadow: 
+        0 0 3px red,
+        0 0 6px red,
+        0 0 12px red;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .buttons button:hover {
+      background: red;
+      color: white;
+      text-shadow: 0 0 10px black;
+    }
+
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      z-index: 9999;
+    }
+
+    #overlay iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Recording control panel */
+    #recordPanel {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid red;
+      padding: 10px;
+      border-radius: 8px;
+      color: red;
+      z-index: 10000;
+      cursor: move;
+    }
+
+    #recordPanel button {
+      background: black;
+      color: red;
+      border: 1px solid red;
+      padding: 5px 12px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    #recordPanel button:hover {
+      background: red;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="title glow">DARE TO GAME</h1>
+  <h2 class="subtitle">OVERRIDE</h2>
+
+  <div class="buttons">
+    <button id="gamesBtn" class="glow">GAMES</button>
+    <button id="mediaBtn" class="glow">MEDIA PLAYER</button>
+    <button id="recordBtn" class="glow">RECORD</button>
+  </div>
+
+  <div id="overlay">
+    <iframe id="overlayFrame"></iframe>
+  </div>
+
+  <!-- Recording Control Panel -->
+  <div id="recordPanel">
+    <p>🔴 Recording...</p>
+    <button id="stopRecordBtn">Stop</button>
+    <button id="downloadBtn" style="display:none;">Download</button>
+  </div>
+
+  <script>
+    const overlay = document.getElementById("overlay");
+    const frame = document.getElementById("overlayFrame");
+
+    async function loadOverlay(url) {
+      try {
+        const response = await fetch(url);
+        const html = await response.text();
+        const blob = new Blob([html], { type: "text/html" });
+        const blobURL = URL.createObjectURL(blob);
+        frame.src = blobURL;
+        overlay.style.display = "block";
+      } catch (err) {
+        alert("❌ Failed to load overlay content.");
+      }
+    }
+
+    document.getElementById("gamesBtn").addEventListener("click", () => {
+      loadOverlay("https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/DARE%20TO%20GAME%20OVERRIDE/OVERRIDE%20GAMES.html");
+    });
+
+    document.getElementById("mediaBtn").addEventListener("click", () => {
+      loadOverlay("https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/DARE%20TO%20GAME%20OVERRIDE/OVERRIDE%20PLAYER.html");
+    });
+
+    // --- Screen recording setup ---
+    let mediaRecorder;
+    let recordedChunks = [];
+
+    document.getElementById("recordBtn").addEventListener("click", async () => {
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: "video/webm" });
+          const url = URL.createObjectURL(blob);
+          const downloadBtn = document.getElementById("downloadBtn");
+          downloadBtn.style.display = "inline-block";
+          downloadBtn.onclick = () => {
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "recording.webm";
+            a.click();
+          };
+        };
+
+        mediaRecorder.start();
+        document.getElementById("recordPanel").style.display = "block";
+
+      } catch (err) {
+        alert("❌ Screen recording not allowed or failed.");
+      }
+    });
+
+    document.getElementById("stopRecordBtn").addEventListener("click", () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      }
+    });
+
+    // --- Make record panel draggable ---
+    const panel = document.getElementById("recordPanel");
+    panel.onmousedown = function (event) {
+      let shiftX = event.clientX - panel.getBoundingClientRect().left;
+      let shiftY = event.clientY - panel.getBoundingClientRect().top;
+
+      function moveAt(pageX, pageY) {
+        panel.style.left = pageX - shiftX + 'px';
+        panel.style.top = pageY - shiftY + 'px';
+      }
+
+      function onMouseMove(e) {
+        moveAt(e.pageX, e.pageY);
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+      panel.onmouseup = function () {
+        document.removeEventListener('mousemove', onMouseMove);
+        panel.onmouseup = null;
+      };
+    };
+
+    panel.ondragstart = () => false;
+  </script>
+</body>
+  </html>
