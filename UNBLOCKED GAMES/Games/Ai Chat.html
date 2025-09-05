@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>AI CHAT</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        background: #0b0b0b;
+      }
+      #app {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+      #status {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #ddd;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      }
+      #status.hidden { display: none; }
+      code { color: #9ad; }
+    </style>
+  </head>
+  <body>
+    <div id="status">Loading <code>AI CHAT</code>…</div>
+    <iframe
+      id="app"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+      referrerpolicy="no-referrer"
+    ></iframe>
+
+    <script>
+      (async () => {
+        const RAW_INDEX =
+          "https://raw.githubusercontent.com/AI-QL/chat-ui/refs/heads/main/index.html";
+        const BASE_HREF =
+          "https://raw.githubusercontent.com/AI-QL/chat-ui/refs/heads/main/";
+
+        const status = document.getElementById("status");
+        const frame = document.getElementById("app");
+
+        try {
+          const res = await fetch(RAW_INDEX, { cache: "no-store" });
+          if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+          let html = await res.text();
+
+          // Inject a <base> so relative URLs in the fetched HTML resolve correctly
+          const headMatch = html.match(/<head\b[^>]*>/i);
+          const baseTag = `<base href="${BASE_HREF}">`;
+          if (headMatch) {
+            const insertPos = headMatch.index + headMatch[0].length;
+            html = html.slice(0, insertPos) + "\n" + baseTag + html.slice(insertPos);
+          } else {
+            html = baseTag + "\n" + html;
+          }
+
+          frame.srcdoc = html;
+          status.classList.add("hidden");
+        } catch (err) {
+          status.innerHTML =
+            'Failed to load. Details:<br><br><code>' +
+            String(err).replace(/[&<>]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[s])) +
+            "</code>";
+        }
+      })();
+    </script>
+  </body>
+</html>
