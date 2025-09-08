@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GLITCHED OVERRIDE T/C</title>
+  <style>
+    body { margin:0; font-family:sans-serif; background:black; color:red; height:100vh; display:flex; flex-direction:column; }
+    header { padding:20px; font-size:1.5em; background:#111; border-bottom:1px solid red; text-align:center; font-weight:bold; }
+    #app { flex:1; position:relative; overflow:hidden; }
+    .screen { position:absolute; top:0; left:0; width:100%; height:100%; transform:translateX(100%); transition:transform 0.3s ease; }
+    .active { transform:translateX(0); }
+    #nav { display:flex; justify-content:space-around; background:#111; border-top:1px solid red; }
+    #nav button { flex:1; padding:12px; color:red; background:none; border:none; cursor:pointer; font-size:1em; }
+    .item { margin:6px; padding:12px; background:#111; border-radius:12px; border:1px solid red; display:flex; justify-content:space-between; align-items:center; }
+    .online { color:lime; } .offline { color:gray; }
+    #chat-view { position:absolute; top:0; left:100%; width:100%; height:100%; background:black; display:flex; flex-direction:column; transition:transform 0.3s ease; }
+    #chat-header { display:flex; align-items:center; padding:15px; background:#111; border-bottom:1px solid red; }
+    #back-btn { background:none; border:none; color:red; font-size:1.2em; cursor:pointer; margin-right:10px; }
+    #call-btn { background:none; border:none; color:red; font-size:1.2em; margin-left:auto; cursor:pointer; }
+    #messages { flex:1; overflow-y:auto; padding:10px; }
+    #chat-footer { display:flex; border-top:1px solid red; }
+    #chat-footer input { flex:1; padding:10px; background:#111; border:none; color:red; }
+    #chat-footer button { background:red; border:none; padding:10px; color:black; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <header id="title">GLITCHED OVERRIDE T/C</header>
+  <div id="app">
+    <!-- Chats Screen -->
+    <div id="chats" class="screen active">
+      <div style="padding:10px;">No chats yet</div>
+    </div>
+
+    <!-- Contacts Screen -->
+    <div id="contacts" class="screen">
+      <div style="padding:10px;">
+        <input id="contactId" placeholder="Enter contact ID"/>
+        <button onclick="addContact()">Add</button>
+        <div id="contactsList"></div>
+      </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div id="profile" class="screen">
+      <div style="padding:20px;">
+        <p style="font-size:1.4em; font-weight:bold; color:red;" id="myname"></p>
+        <p><b>Your ID:</b> <span id="myid"></span></p>
+        <input id="newname" placeholder="Change display name"/>
+        <button onclick="rename()">Save</button>
+      </div>
+    </div>
+
+    <!-- Chat View -->
+    <div id="chat-view">
+      <div id="chat-header">
+        <button id="back-btn" onclick="closeChat()">←</button>
+        <span id="chatTitle"></span>
+        <button id="call-btn" onclick="callUser()">📞</button>
+      </div>
+      <div id="messages"></div>
+      <div id="chat-footer">
+        <input id="msgInput" placeholder="Type a message"/>
+        <button onclick="sendMsg()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="nav">
+    <button onclick="switchTab(0)">Chats</button>
+    <button onclick="switchTab(1)">Contacts</button>
+    <button onclick="switchTab(2)">Profile</button>
+  </div>
+
+<script>
+let screens = ["chats","contacts","profile"];
+let currentTab = 0;
+
+function switchTab(i) {
+  screens.forEach((s,idx)=>{
+    document.getElementById(s).classList.remove("active");
+    if (idx===i) {
+      document.getElementById(s).classList.add("active");
+    }
+  });
+  currentTab = i;
+  // keep static header title
+  document.getElementById("title").textContent = "GLITCHED OVERRIDE T/C";
+}
+
+// Profile setup
+let userId = localStorage.getItem("userId") || Math.random().toString(36).slice(2,10);
+localStorage.setItem("userId", userId);
+let displayName = localStorage.getItem("displayName") || userId;
+document.getElementById("myname").textContent = displayName;
+document.getElementById("myid").textContent = userId;
+
+function rename() {
+  let newName = document.getElementById("newname").value.trim();
+  if (newName) {
+    displayName = newName;
+    localStorage.setItem("displayName", newName);
+    document.getElementById("myname").textContent = newName;
+    alert("Name updated!");
+  }
+}
+
+// Placeholder stubs for now
+function addContact() { alert("Contact add coming soon"); }
+function closeChat() { document.getElementById("chat-view").style.transform="translateX(100%)"; }
+function sendMsg() { alert("Messaging coming soon"); }
+function callUser() { alert("Calling feature coming soon"); }
+</script>
+</body>
+</html>
