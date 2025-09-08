@@ -29,12 +29,10 @@ header { padding:20px; font-size:1.5em; background:#111; border-bottom:1px solid
 <header id="title">GLITCHED OVERRIDE T/C</header>
 
 <div id="app">
-  <!-- Chats -->
   <div id="chats" class="screen active">
     <div id="chatList" style="padding:10px;">No chats yet</div>
   </div>
 
-  <!-- Contacts -->
   <div id="contacts" class="screen">
     <div style="padding:10px;">
       <input id="contactId" placeholder="Enter contact ID"/>
@@ -43,7 +41,6 @@ header { padding:20px; font-size:1.5em; background:#111; border-bottom:1px solid
     </div>
   </div>
 
-  <!-- Profile -->
   <div id="profile" class="screen">
     <div style="padding:20px;">
       <p style="font-size:1.4em; font-weight:bold; color:red;" id="myname"></p>
@@ -53,7 +50,6 @@ header { padding:20px; font-size:1.5em; background:#111; border-bottom:1px solid
     </div>
   </div>
 
-  <!-- Chat View -->
   <div id="chat-view">
     <div id="chat-header">
       <button id="back-btn" onclick="closeChat()">←</button>
@@ -78,20 +74,13 @@ header { padding:20px; font-size:1.5em; background:#111; border-bottom:1px solid
 const WORKER_URL = "https://glitched-override-remote-chat.th15isar0bothi.workers.dev";
 
 let screens = ["chats","contacts","profile"];
-let currentTab = 0;
+let currentTab=0;
+function switchTab(i){ screens.forEach((s,idx)=>{document.getElementById(s).classList.remove("active"); if(idx===i)document.getElementById(s).classList.add("active"); }); currentTab=i; }
 
-function switchTab(i){
-  screens.forEach((s,idx)=>{
-    document.getElementById(s).classList.remove("active");
-    if(idx===i) document.getElementById(s).classList.add("active");
-  });
-  currentTab=i;
-}
-
-// Profile setup
-let userId = localStorage.getItem("userId") || Math.random().toString(36).slice(2,10);
-localStorage.setItem("userId", userId);
-let displayName = localStorage.getItem("displayName") || userId;
+// Profile
+let userId=localStorage.getItem("userId")||Math.random().toString(36).slice(2,10);
+localStorage.setItem("userId",userId);
+let displayName=localStorage.getItem("displayName")||userId;
 document.getElementById("myname").textContent=displayName;
 document.getElementById("myid").textContent=userId;
 
@@ -106,12 +95,11 @@ async function addContact(){
   if(contactId===userId) return alert("Cannot add yourself");
   if(contacts.includes(contactId)) return alert("Contact already exists");
 
-  // Validate contact via Worker
   try{
     const res=await fetch(`${WORKER_URL}/check?id=${contactId}`);
     const data=await res.json();
     if(!data.exists) return alert("Contact does not exist online");
-  }catch(err){ return alert("Error checking contact"); }
+  }catch(e){ return alert("Error checking contact"); }
 
   contacts.push(contactId);
   localStorage.setItem("contacts",JSON.stringify(contacts));
@@ -119,39 +107,31 @@ async function addContact(){
   renderContacts();
 }
 
-function removeContact(id){
-  contacts=contacts.filter(c=>c!==id);
-  localStorage.setItem("contacts",JSON.stringify(contacts));
-  renderContacts();
-}
-
+function removeContact(id){ contacts=contacts.filter(c=>c!==id); localStorage.setItem("contacts",JSON.stringify(contacts)); renderContacts(); }
 function renderContacts(){
-  const list=document.getElementById("contactsList");
-  list.innerHTML="";
+  const list=document.getElementById("contactsList"); list.innerHTML="";
   if(contacts.length===0){ list.innerHTML="<p>No contacts yet</p>"; return; }
-  contacts.forEach(id=>{
-    const div=document.createElement("div");
-    div.className="item";
-    div.innerHTML=`<span>${id}</span><button onclick="removeContact('${id}')">Remove</button>`;
-    list.appendChild(div);
-  });
+  contacts.forEach(id=>{ const div=document.createElement("div"); div.className="item"; div.innerHTML=`<span>${id}</span><button onclick="removeContact('${id}')">Remove</button>`; list.appendChild(div); });
 }
 
 // Profile rename
-function rename(){
-  let newName=document.getElementById("newname").value.trim();
-  if(newName){
-    displayName=newName;
-    localStorage.setItem("displayName",newName);
-    document.getElementById("myname").textContent=newName;
-    alert("Name updated!");
-  }
-}
+function rename(){ let newName=document.getElementById("newname").value.trim(); if(newName){ displayName=newName; localStorage.setItem("displayName",newName); document.getElementById("myname").textContent=newName; alert("Name updated!"); } }
 
-// Chat window (placeholder)
+// Chat window placeholders
+let currentChat="";
 function closeChat(){ document.getElementById("chat-view").style.transform="translateX(100%)"; }
-function sendMsg(){ alert("Messaging coming soon"); }
-function callUser(){ alert("Calling feature coming soon"); }
+function sendMsg(){ 
+  let msg=document.getElementById("msgInput").value.trim(); if(!msg) return;
+  appendMessage(displayName,msg); 
+  document.getElementById("msgInput").value="";
+  if(socket && currentChat){ socket.send(JSON.stringify({type:"chat",to:currentChat,text:msg})); }
+}
+function callUser(){ if(socket && currentChat) socket.send(JSON.stringify({type:"call",to:currentChat})); alert("Calling "+currentChat); }
+function appendMessage(from,text){ const m=document.createElement("div"); m.textContent=from+": "+text; document.getElementById("messages").appendChild(m); }
+
+// Connect WebSocket
+let socket=new WebSocket(`${WORKER_URL.replace(/^http/,"ws")}/ws?id=${userId}`);
+socket.onmessage=function(e){ try{ const msg=JSON.parse(e.data); if(msg.type==="chat"){ if(msg.from===currentChat){ appendMessage(msg.from,msg.text); } else { alert("New message from "+msg.from); } } if(msg.type==="call"){ alert(msg.from+" is calling you!"); } }catch{} };
 </script>
 </body>
-</html>
+        </html>
