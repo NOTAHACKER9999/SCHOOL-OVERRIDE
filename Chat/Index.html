@@ -13,6 +13,15 @@ header { padding:20px; font-size:1.5em; background:#111; border-bottom:1px solid
 #nav button { flex:1; padding:12px; color:red; background:none; border:none; cursor:pointer; font-size:1em; }
 .item { margin:6px; padding:12px; background:#111; border-radius:12px; border:1px solid red; display:flex; justify-content:space-between; align-items:center; }
 .online { color:lime; } .offline { color:gray; }
+#chat-view { position:absolute; top:0; left:100%; width:100%; height:100%; background:black; display:flex; flex-direction:column; transition:transform 0.3s ease; }
+#chat-header { display:flex; align-items:center; padding:15px; background:#111; border-bottom:1px solid red; }
+#back-btn, #call-btn { background:none; border:none; color:red; font-size:1.2em; cursor:pointer; }
+#back-btn { margin-right:10px; }
+#call-btn { margin-left:auto; }
+#messages { flex:1; overflow-y:auto; padding:10px; }
+#chat-footer { display:flex; border-top:1px solid red; }
+#chat-footer input { flex:1; padding:10px; background:#111; border:none; color:red; }
+#chat-footer button { background:red; border:none; padding:10px; color:black; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -20,12 +29,12 @@ header { padding:20px; font-size:1.5em; background:#111; border-bottom:1px solid
 <header id="title">GLITCHED OVERRIDE T/C</header>
 
 <div id="app">
-  <!-- Chats Screen -->
+  <!-- Chats -->
   <div id="chats" class="screen active">
-    <div style="padding:10px;" id="chatList">No chats yet</div>
+    <div id="chatList" style="padding:10px;">No chats yet</div>
   </div>
 
-  <!-- Contacts Screen -->
+  <!-- Contacts -->
   <div id="contacts" class="screen">
     <div style="padding:10px;">
       <input id="contactId" placeholder="Enter contact ID"/>
@@ -34,13 +43,27 @@ header { padding:20px; font-size:1.5em; background:#111; border-bottom:1px solid
     </div>
   </div>
 
-  <!-- Profile Screen -->
+  <!-- Profile -->
   <div id="profile" class="screen">
     <div style="padding:20px;">
       <p style="font-size:1.4em; font-weight:bold; color:red;" id="myname"></p>
       <p><b>Your ID:</b> <span id="myid"></span></p>
       <input id="newname" placeholder="Change display name"/>
       <button onclick="rename()">Save</button>
+    </div>
+  </div>
+
+  <!-- Chat View -->
+  <div id="chat-view">
+    <div id="chat-header">
+      <button id="back-btn" onclick="closeChat()">←</button>
+      <span id="chatTitle"></span>
+      <button id="call-btn" onclick="callUser()">📞</button>
+    </div>
+    <div id="messages"></div>
+    <div id="chat-footer">
+      <input id="msgInput" placeholder="Type a message"/>
+      <button onclick="sendMsg()">Send</button>
     </div>
   </div>
 </div>
@@ -52,80 +75,83 @@ header { padding:20px; font-size:1.5em; background:#111; border-bottom:1px solid
 </div>
 
 <script>
+const WORKER_URL = "https://glitched-override-remote-chat.th15isar0bothi.workers.dev";
+
 let screens = ["chats","contacts","profile"];
 let currentTab = 0;
 
-function switchTab(i) {
+function switchTab(i){
   screens.forEach((s,idx)=>{
     document.getElementById(s).classList.remove("active");
     if(idx===i) document.getElementById(s).classList.add("active");
   });
-  currentTab = i;
+  currentTab=i;
 }
 
 // Profile setup
 let userId = localStorage.getItem("userId") || Math.random().toString(36).slice(2,10);
 localStorage.setItem("userId", userId);
 let displayName = localStorage.getItem("displayName") || userId;
-document.getElementById("myname").textContent = displayName;
-document.getElementById("myid").textContent = userId;
+document.getElementById("myname").textContent=displayName;
+document.getElementById("myid").textContent=userId;
 
 // Contacts
-let contacts = JSON.parse(localStorage.getItem("contacts")||"[]");
+let contacts=JSON.parse(localStorage.getItem("contacts")||"[]");
 renderContacts();
 
-async function addContact() {
-  let contactInput = document.getElementById("contactId");
-  let contactId = contactInput.value.trim();
-  if (!contactId) return alert("Enter a valid ID");
-  if (contactId === userId) return alert("Cannot add yourself");
-  if (contacts.includes(contactId)) return alert("Contact already exists");
+async function addContact(){
+  let contactInput=document.getElementById("contactId");
+  let contactId=contactInput.value.trim();
+  if(!contactId) return alert("Enter a valid ID");
+  if(contactId===userId) return alert("Cannot add yourself");
+  if(contacts.includes(contactId)) return alert("Contact already exists");
 
-  // Validate with Cloudflare Worker
-  try {
-    const res = await fetch(`/check?id=${contactId}`);
-    const data = await res.json();
-    if (!data.exists) return alert("Contact does not exist online");
-  } catch(err) { return alert("Error checking contact"); }
+  // Validate contact via Worker
+  try{
+    const res=await fetch(`${WORKER_URL}/check?id=${contactId}`);
+    const data=await res.json();
+    if(!data.exists) return alert("Contact does not exist online");
+  }catch(err){ return alert("Error checking contact"); }
 
   contacts.push(contactId);
-  localStorage.setItem("contacts", JSON.stringify(contacts));
-  contactInput.value = "";
+  localStorage.setItem("contacts",JSON.stringify(contacts));
+  contactInput.value="";
   renderContacts();
 }
 
-function removeContact(id) {
-  contacts = contacts.filter(c => c !== id);
-  localStorage.setItem("contacts", JSON.stringify(contacts));
+function removeContact(id){
+  contacts=contacts.filter(c=>c!==id);
+  localStorage.setItem("contacts",JSON.stringify(contacts));
   renderContacts();
 }
 
-function renderContacts() {
-  const list = document.getElementById("contactsList");
-  list.innerHTML = "";
-  if (contacts.length===0) {
-    list.innerHTML = "<p>No contacts yet</p>";
-    return;
-  }
+function renderContacts(){
+  const list=document.getElementById("contactsList");
+  list.innerHTML="";
+  if(contacts.length===0){ list.innerHTML="<p>No contacts yet</p>"; return; }
   contacts.forEach(id=>{
-    const div = document.createElement("div");
+    const div=document.createElement("div");
     div.className="item";
-    div.innerHTML = `<span>${id}</span><button onclick="removeContact('${id}')">Remove</button>`;
+    div.innerHTML=`<span>${id}</span><button onclick="removeContact('${id}')">Remove</button>`;
     list.appendChild(div);
   });
 }
 
 // Profile rename
-function rename() {
-  let newName = document.getElementById("newname").value.trim();
+function rename(){
+  let newName=document.getElementById("newname").value.trim();
   if(newName){
-    displayName = newName;
-    localStorage.setItem("displayName", newName);
-    document.getElementById("myname").textContent = newName;
+    displayName=newName;
+    localStorage.setItem("displayName",newName);
+    document.getElementById("myname").textContent=newName;
     alert("Name updated!");
   }
 }
-</script>
 
+// Chat window (placeholder)
+function closeChat(){ document.getElementById("chat-view").style.transform="translateX(100%)"; }
+function sendMsg(){ alert("Messaging coming soon"); }
+function callUser(){ alert("Calling feature coming soon"); }
+</script>
 </body>
 </html>
