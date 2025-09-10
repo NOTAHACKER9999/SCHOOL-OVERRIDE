@@ -1,1 +1,221 @@
-.
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>OVERRIDE Media Player</title>
+  <style>
+    :root {
+      --bg:#0b0b0b;
+      --panel:#111;
+      --accent:#c41616;
+      --accent-glow:#ff3b3b;
+    }
+    body {
+      margin:0;
+      background:var(--bg);
+      color:#fff;
+      font-family:"Segoe UI", Roboto, sans-serif;
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
+    .search-bar {
+      display:flex;
+      align-items:center;
+      background:var(--panel);
+      border-radius:50px;
+      padding:10px 16px;
+      width:90%;
+      max-width:600px;
+      box-shadow:0 0 12px rgba(0,0,0,0.5);
+      border:2px solid var(--accent);
+      transition: all 0.25s ease;
+    }
+    .search-bar:hover {
+      border-color: var(--accent-glow);
+      box-shadow: 0 0 14px var(--accent-glow);
+    }
+    .search-bar input {
+      flex:1;
+      background:transparent;
+      border:none;
+      outline:none;
+      font-size:1rem;
+      color:#fff;
+      padding:8px 12px;
+    }
+    .search-bar button {
+      background:var(--accent);
+      border:none;
+      color:#fff;
+      font-weight:600;
+      padding:10px 20px;
+      border-radius:30px;
+      cursor:pointer;
+      transition:all 0.2s ease;
+    }
+    .search-bar button:hover {
+      background:var(--accent-glow);
+      box-shadow:0 0 12px var(--accent-glow);
+    }
+
+    /* Overlay */
+    .overlay {
+      position:fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      background:rgba(0,0,0,0.95);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      flex-direction:column;
+    }
+    .overlay.active {
+      display:flex;
+    }
+    .player-container {
+      width:90%;
+      max-width:1000px;
+      height:70%;
+      background:#000;
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 0 25px rgba(0,0,0,0.7);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+    }
+    iframe, video, audio {
+      width:100%;
+      height:100%;
+      border:0;
+      background:#000;
+    }
+    audio {
+      height:60px;
+    }
+    .close-btn {
+      position:absolute;
+      top:20px;
+      right:30px;
+      font-size:2rem;
+      font-weight:900;
+      color:var(--accent);
+      cursor:pointer;
+      user-select:none;
+      text-shadow:0 0 12px rgba(255,59,59,0.6);
+    }
+    .close-btn:hover {
+      color:var(--accent-glow);
+    }
+    .placeholder {
+      color:#777;
+      font-size:1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="search-bar">
+    <input id="urlInput" placeholder="Paste YouTube, Spotify, Apple Music, or media link..." />
+    <button onclick="openOverlay()">Play</button>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="player-container" id="playerArea">
+      <div class="placeholder">Your media will appear here 🎵🎬</div>
+    </div>
+    <div class="close-btn" onclick="closeOverlay()">✖</div>
+  </div>
+
+  <script>
+    const overlay = document.getElementById('overlay');
+    const playerArea = document.getElementById('playerArea');
+    const input = document.getElementById('urlInput');
+
+    function openOverlay() {
+      loadMedia();
+      overlay.classList.add("active");
+    }
+    function closeOverlay() {
+      overlay.classList.remove("active");
+      playerArea.innerHTML = '<div class="placeholder">Your media will appear here 🎵🎬</div>';
+    }
+
+    function loadMedia() {
+      const url = input.value.trim();
+      if(!url) return;
+      playerArea.innerHTML = "";
+
+      // YouTube
+      if(/(youtube\.com|youtu\.be)/i.test(url)) {
+        let embed;
+        if(url.includes("list=")) {
+          const list = url.match(/[?&]list=([^&]+)/i)?.[1];
+          embed = "https://www.youtube.com/embed/videoseries?list=" + list;
+        } else {
+          const id = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1];
+          embed = "https://www.youtube.com/embed/" + id;
+        }
+        makeIframe(embed);
+        return;
+      }
+
+      // Apple Music
+      if(/music\.apple\.com/i.test(url)) {
+        const embed = url.replace("music.apple.com", "embed.music.apple.com");
+        makeIframe(embed);
+        return;
+      }
+
+      // Spotify
+      if(/open\.spotify\.com/i.test(url)) {
+        const embed = url.replace("open.spotify.com", "open.spotify.com/embed");
+        makeIframe(embed);
+        return;
+      }
+
+      // Direct audio/video
+      if(/\.(mp3|m4a|wav|aac|ogg)$/i.test(url)) {
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.autoplay = true;
+        audio.src = url;
+        playerArea.appendChild(audio);
+        return;
+      }
+      if(/\.(mp4|webm|mov)$/i.test(url)) {
+        const video = document.createElement("video");
+        video.controls = true;
+        video.autoplay = true;
+        video.src = url;
+        video.setAttribute("playsinline","");
+        video.setAttribute("webkit-playsinline","");
+        playerArea.appendChild(video);
+        return;
+      }
+
+      // Fallback
+      makeIframe(url);
+    }
+
+    function makeIframe(src) {
+      const iframe = document.createElement("iframe");
+      iframe.src = src;
+      iframe.allow = "autoplay; encrypted-media; fullscreen";
+      iframe.setAttribute("allowfullscreen","");
+      playerArea.appendChild(iframe);
+    }
+
+    // Enter key = open overlay + play
+    input.addEventListener("keydown", e=>{
+      if(e.key==="Enter") openOverlay();
+    });
+  </script>
+</body>
+  </html>
