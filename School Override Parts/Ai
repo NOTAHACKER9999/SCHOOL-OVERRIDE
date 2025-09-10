@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Overlay</title>
+  <style>
+    body,html{margin:0;height:100%}
+    #overlay{
+      position:fixed;
+      inset:0;
+      background:#000;
+      z-index:9999;
+    }
+    #overlay iframe{
+      width:100%;
+      height:100%;
+      border:0;
+    }
+    #closeBtn{
+      position:absolute;
+      top:10px;
+      right:10px;
+      width:40px;
+      height:40px;
+      border:none;
+      border-radius:20px;
+      background:#ff4d4f;
+      color:#fff;
+      font-size:20px;
+      font-weight:bold;
+      cursor:pointer;
+      z-index:10000;
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay">
+    <button id="closeBtn">✕</button>
+    <iframe src="https://www.polybuzz.ai/" allowfullscreen></iframe>
+  </div>
+  <script>
+    document.getElementById("closeBtn").onclick = () =>
+      document.getElementById("overlay").remove();
+  </script>
+</body>
+</html>
