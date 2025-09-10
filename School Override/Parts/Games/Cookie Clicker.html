@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Auto Load Remote GitHub HTML</title>
+  <style>
+    html, body { margin:0; padding:0; height:100%; }
+    iframe { width:100%; height:100%; border:0; }
+  </style>
+</head>
+<body>
+  <iframe id="runner" title="remote-html"></iframe>
+
+  <script>
+    (async () => {
+      const rawUrl = "https://raw.githubusercontent.com/ZaneAP/GPortal/refs/heads/main/games/cookieclicker/index.html";
+      try {
+        const res = await fetch(rawUrl);
+        if (!res.ok) throw new Error(res.status + " " + res.statusText);
+        let html = await res.text();
+
+        // insert <base> so relative paths load correctly
+        const base = rawUrl.replace(/\/[^\/]*$/, "/");
+        if (/<head[\s>]/i.test(html)) {
+          html = html.replace(/<head([^>]*)>/i, `<head$1><base href="${base}">`);
+        } else {
+          html = `<head><base href="${base}"></head>\n` + html;
+        }
+
+        const blob = new Blob([html], { type: "text/html" });
+        const blobUrl = URL.createObjectURL(blob);
+
+        document.getElementById("runner").src = blobUrl;
+
+        // revoke URL later
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+      } catch (e) {
+        document.body.innerHTML = `<pre style="color:red">Error loading remote page:\n${e}</pre>`;
+      }
+    })();
+  </script>
+</body>
+</html>
