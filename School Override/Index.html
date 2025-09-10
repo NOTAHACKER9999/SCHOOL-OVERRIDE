@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Override Updater</title>
+</head>
+<body>
+
+<script>
+  // Fetch the GitHub raw HTML and replace the current page
+  fetch('https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/School%20Override%20Updater.html')
+    .then(res => res.text())
+    .then(html => {
+      document.open();
+      document.write(html);
+      document.close();
+    })
+    .catch(err => console.error('Failed to load page:', err));
+</script>
+
+</body>
+</html>
