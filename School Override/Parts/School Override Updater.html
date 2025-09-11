@@ -107,15 +107,20 @@ document.getElementById('polybuzz-btn').addEventListener('click', ()=>openOverla
 document.getElementById('media-btn').addEventListener('click', ()=>openOverlay("https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Media%20Player.html"));
 closeOverlay.addEventListener('click', ()=>{overlay.style.display='none'; overlayIframe.srcdoc='';});
 
-// Games panel - always fetch fresh list
-async function fetchAndRenderGames(filter=""){
-  const res = await fetch("https://api.github.com/repos/NOTAHACKER9999/SCHOOL-OVERRIDE/contents/School%20Override/Parts/Games");
-  const data = await res.json();
-  const games = data.filter(f=>f.name.endsWith(".html")).map(f=>({name:f.name.replace(".html",""), link:f.download_url}));
-  const filtered = games.filter(g=>g.name.toLowerCase().includes(filter.toLowerCase()));
-  gamesList.innerHTML = "";
+// Games panel - working version
+const allGames = [
+  {name:"1v1.lol", link:"https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Games/1v1.lol.html"},
+  {name:"Baldi Plus", link:"https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Games/Baldi%20Plus.html"},
+  {name:"Baldi Remastered", link:"https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Games/Baldi%20Remastered.html"},
+  {name:"Bendy", link:"https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Games/Bendy.html"},
+  {name:"Buckshot Ruelette", link:"https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Games/Buckshot%20Ruelette.html"}
+];
+
+function renderGames(filter=""){
+  gamesList.innerHTML="";
+  const filtered = allGames.filter(g=>g.name.toLowerCase().includes(filter.toLowerCase()));
   filtered.forEach(g=>{
-    const btn=document.createElement('button');
+    const btn = document.createElement('button');
     btn.textContent = g.name;
     btn.addEventListener('click', ()=>{
       openOverlay(g.link);
@@ -127,15 +132,14 @@ async function fetchAndRenderGames(filter=""){
 
 document.getElementById('games-btn').addEventListener('click', ()=>{
   gamesModal.style.display='flex';
-  fetchAndRenderGames();
+  renderGames();
 });
 
 gameSearch.addEventListener('input', (e)=>{
-  fetchAndRenderGames(e.target.value);
+  renderGames(e.target.value);
 });
 
 closeGames.addEventListener('click', ()=>{gamesModal.style.display='none';});
-
 </script>
 </body>
 </html>
