@@ -107,20 +107,16 @@ document.getElementById('polybuzz-btn').addEventListener('click', ()=>openOverla
 document.getElementById('media-btn').addEventListener('click', ()=>openOverlay("https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Media%20Player.html"));
 closeOverlay.addEventListener('click', ()=>{overlay.style.display='none'; overlayIframe.srcdoc='';});
 
-// Games panel
-let allGames = [];
-async function fetchGames(){
+// Games panel - always fetch fresh list
+async function fetchAndRenderGames(filter=""){
   const res = await fetch("https://api.github.com/repos/NOTAHACKER9999/SCHOOL-OVERRIDE/contents/School%20Override/Parts/Games");
   const data = await res.json();
-  return data.filter(f=>f.name.endsWith(".html")).map(f=>({name:f.name.replace(".html",""), link:f.download_url}));
-}
-
-function renderGames(filter=""){
-  gamesList.innerHTML='';
-  let filtered = allGames.filter(g=>g.name.toLowerCase().includes(filter.toLowerCase()));
+  const games = data.filter(f=>f.name.endsWith(".html")).map(f=>({name:f.name.replace(".html",""), link:f.download_url}));
+  const filtered = games.filter(g=>g.name.toLowerCase().includes(filter.toLowerCase()));
+  gamesList.innerHTML = "";
   filtered.forEach(g=>{
     const btn=document.createElement('button');
-    btn.textContent=g.name;
+    btn.textContent = g.name;
     btn.addEventListener('click', ()=>{
       openOverlay(g.link);
       gamesModal.style.display='none';
@@ -129,13 +125,15 @@ function renderGames(filter=""){
   });
 }
 
-document.getElementById('games-btn').addEventListener('click', async ()=>{
+document.getElementById('games-btn').addEventListener('click', ()=>{
   gamesModal.style.display='flex';
-  if(allGames.length===0) allGames=await fetchGames();
-  renderGames();
+  fetchAndRenderGames();
 });
 
-gameSearch.addEventListener('input', (e)=>renderGames(e.target.value));
+gameSearch.addEventListener('input', (e)=>{
+  fetchAndRenderGames(e.target.value);
+});
+
 closeGames.addEventListener('click', ()=>{gamesModal.style.display='none';});
 
 </script>
