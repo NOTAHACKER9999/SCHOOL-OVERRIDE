@@ -92,7 +92,7 @@ fetch('https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/hea
 function openOverlay(link){
   overlay.style.display='flex';
   fetch(link).then(r=>r.text()).then(html=>overlayIframe.srcdoc = html);
-  localStorage.setItem('lastGame', link);
+  localStorage.setItem('lastGame', link); // save progress
 }
 
 // AI buttons
@@ -104,64 +104,63 @@ document.getElementById('polybuzz-btn').addEventListener('click', ()=>openOverla
 document.getElementById('media-btn').addEventListener('click', ()=>openOverlay("https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Media%20Player.html"));
 closeOverlay.addEventListener('click', ()=>{overlay.style.display='none'; overlayIframe.srcdoc='';});
 
-// Games panel - lazy load as found
-async function fetchAllGamesLazy(filter="") {
-    let page = 1;
-    const uniqueGames = new Map();
-    gamesList.innerHTML = ''; // clear list first
-    try {
-        while(true){
-            const res = await fetch(`https://api.github.com/repos/NOTAHACKER9999/SCHOOL-OVERRIDE/contents/School%20Override/Parts/Games?per_page=100&page=${page}`);
-            const data = await res.json();
-            if(!Array.isArray(data) || data.length === 0) break;
+// Games panel - fast lazy-load as each file is found
+async function loadGamesFast(filter=""){
+    gamesList.innerHTML = '';
+    try{
+        const res = await fetch('https://api.github.com/repos/NOTAHACKER9999/SCHOOL-OVERRIDE/contents/School%20Override/Parts/Games');
+        const data = await res.json();
+        if(!Array.isArray(data)) return;
 
-            for(const f of data){
-                if(f.name.endsWith(".html") && !uniqueGames.has(f.name)){
-                    uniqueGames.set(f.name, f.download_url);
-                    const nameOnly = f.name.replace(".html","");
-                    if(nameOnly.toLowerCase().includes(filter.toLowerCase())){
-                        const btn = document.createElement('button');
-                        btn.textContent = nameOnly;
-                        btn.addEventListener('click', ()=>{
-                            openOverlay(f.download_url);
-                            gamesModal.style.display='none';
-                        });
-                        gamesList.appendChild(btn);
-                    }
-                }
+        const uniqueGames = new Map();
+        data.forEach(f => {
+            if(f.name.endsWith(".html") && !uniqueGames.has(f.name)){
+                uniqueGames.set(f.name, f.download_url);
             }
+        });
 
-            if(data.length < 100) break;
-            page++;
+        const gameArray = Array.from(uniqueGames.entries())
+            .map(([name, link]) => ({name: name.replace(".html",""), link}))
+            .filter(g => g.name.toLowerCase().includes(filter.toLowerCase()));
+
+        // Load in small chunks to avoid UI freeze
+        const chunkSize = 5;
+        for(let i=0; i<gameArray.length; i+=chunkSize){
+            const chunk = gameArray.slice(i, i+chunkSize);
+            chunk.forEach(g => {
+                const btn = document.createElement('button');
+                btn.textContent = g.name;
+                btn.addEventListener('click', ()=>{
+                    openOverlay(g.link);
+                    gamesModal.style.display='none';
+                });
+                gamesList.appendChild(btn);
+            });
+            await new Promise(r=>setTimeout(r, 50)); // allow UI to render
         }
-        // restore last search
+
         const savedSearch = localStorage.getItem('lastSearch');
-        if(savedSearch) {
-            gameSearch.value = savedSearch;
-            if(savedSearch) fetchAllGamesLazy(savedSearch);
-        }
+        if(savedSearch) gameSearch.value = savedSearch;
+
     } catch(err){
-        console.error("Failed to fetch games:", err);
-        gamesList.innerHTML = "<p style='color:red'>Failed to load games.</p>";
+        console.error(err);
+        gamesList.innerHTML="<p style='color:red'>Failed to load games.</p>";
     }
 }
 
+// Event listeners
 document.getElementById('games-btn').addEventListener('click', ()=>{
-  gamesModal.style.display='flex';
-  fetchAllGamesLazy();
+    gamesModal.style.display='flex';
+    loadGamesFast(gameSearch.value);
 });
 
 gameSearch.addEventListener('input', (e)=>{
-  const val = e.target.value;
-  localStorage.setItem('lastSearch', val);
-  fetchAllGamesLazy(val);
+    const val = e.target.value;
+    localStorage.setItem('lastSearch', val);
+    loadGamesFast(val);
 });
 
 closeGames.addEventListener('click', ()=>{gamesModal.style.display='none';});
-
-// Restore last opened game
-const lastGame = localStorage.getItem('lastGame');
-if(lastGame) openOverlay(lastGame);
 </script>
 </body>
 </html>
