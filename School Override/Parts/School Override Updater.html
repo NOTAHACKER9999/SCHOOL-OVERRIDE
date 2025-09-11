@@ -11,7 +11,6 @@
   .top-bar button:hover { color:red; }
   #content-frame { flex:1; width:100%; border:none; }
 
-  /* Dropdowns */
   .dropdown { position:relative; display:inline-block; }
   .dropdown-content { display:none; position:absolute; top:40px; left:0; background:#222; border:2px solid #444; border-radius:8px; min-width:200px; padding:10px; z-index:20; gap:10px; }
   .dropdown:hover .dropdown-content { display:flex; }
@@ -21,12 +20,10 @@
   .dropdown-content .character-ai:hover .secondary-dropdown { display:flex; }
   .secondary-dropdown button { width:100%; margin-top:5px; }
 
-  /* Overlay */
   #overlay, #games-modal { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95); z-index:9999; justify-content:center; align-items:center; }
   #overlay iframe { width:90%; height:90%; border:none; border-radius:10px; background:black; }
   #close-overlay, #close-games { position:absolute; top:20px; right:30px; font-size:30px; color:red; cursor:pointer; font-weight:bold; }
 
-  /* Games modal */
   #games-modal .games-box { background:black; border:2px solid white; border-radius:10px; width:600px; height:70vh; display:flex; flex-direction:column; overflow:hidden; }
   .games-search { padding:10px; border-bottom:2px solid white; background:#111; }
   .games-search input { width:100%; padding:8px; border:2px solid white; background:black; color:white; border-radius:6px; }
@@ -34,7 +31,6 @@
   .games-list button { background:#222; border:2px solid #555; color:white; padding:10px; border-radius:6px; cursor:pointer; text-align:left; }
   .games-list button:hover { background:white; color:black; }
 
-  /* Version label */
   #beta-label { position:fixed; bottom:5px; right:10px; font-size:12px; color:white; z-index:10000; font-family:monospace; }
 </style>
 </head>
@@ -96,6 +92,7 @@ fetch('https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/hea
 function openOverlay(link){
   overlay.style.display='flex';
   fetch(link).then(r=>r.text()).then(html=>overlayIframe.srcdoc = html);
+  localStorage.setItem('lastGame', link);
 }
 
 // AI buttons
@@ -107,39 +104,64 @@ document.getElementById('polybuzz-btn').addEventListener('click', ()=>openOverla
 document.getElementById('media-btn').addEventListener('click', ()=>openOverlay("https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Media%20Player.html"));
 closeOverlay.addEventListener('click', ()=>{overlay.style.display='none'; overlayIframe.srcdoc='';});
 
-// Games panel - working version
-const allGames = [
-  {name:"1v1.lol", link:"https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Games/1v1.lol.html"},
-  {name:"Baldi Plus", link:"https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Games/Baldi%20Plus.html"},
-  {name:"Baldi Remastered", link:"https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Games/Baldi%20Remastered.html"},
-  {name:"Bendy", link:"https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Games/Bendy.html"},
-  {name:"Buckshot Ruelette", link:"https://raw.githubusercontent.com/NOTAHACKER9999/SCHOOL-OVERRIDE/refs/heads/main/School%20Override/Parts/Games/Buckshot%20Ruelette.html"}
-];
+// Games panel - lazy load as found
+async function fetchAllGamesLazy(filter="") {
+    let page = 1;
+    const uniqueGames = new Map();
+    gamesList.innerHTML = ''; // clear list first
+    try {
+        while(true){
+            const res = await fetch(`https://api.github.com/repos/NOTAHACKER9999/SCHOOL-OVERRIDE/contents/School%20Override/Parts/Games?per_page=100&page=${page}`);
+            const data = await res.json();
+            if(!Array.isArray(data) || data.length === 0) break;
 
-function renderGames(filter=""){
-  gamesList.innerHTML="";
-  const filtered = allGames.filter(g=>g.name.toLowerCase().includes(filter.toLowerCase()));
-  filtered.forEach(g=>{
-    const btn = document.createElement('button');
-    btn.textContent = g.name;
-    btn.addEventListener('click', ()=>{
-      openOverlay(g.link);
-      gamesModal.style.display='none';
-    });
-    gamesList.appendChild(btn);
-  });
+            for(const f of data){
+                if(f.name.endsWith(".html") && !uniqueGames.has(f.name)){
+                    uniqueGames.set(f.name, f.download_url);
+                    const nameOnly = f.name.replace(".html","");
+                    if(nameOnly.toLowerCase().includes(filter.toLowerCase())){
+                        const btn = document.createElement('button');
+                        btn.textContent = nameOnly;
+                        btn.addEventListener('click', ()=>{
+                            openOverlay(f.download_url);
+                            gamesModal.style.display='none';
+                        });
+                        gamesList.appendChild(btn);
+                    }
+                }
+            }
+
+            if(data.length < 100) break;
+            page++;
+        }
+        // restore last search
+        const savedSearch = localStorage.getItem('lastSearch');
+        if(savedSearch) {
+            gameSearch.value = savedSearch;
+            if(savedSearch) fetchAllGamesLazy(savedSearch);
+        }
+    } catch(err){
+        console.error("Failed to fetch games:", err);
+        gamesList.innerHTML = "<p style='color:red'>Failed to load games.</p>";
+    }
 }
 
 document.getElementById('games-btn').addEventListener('click', ()=>{
   gamesModal.style.display='flex';
-  renderGames();
+  fetchAllGamesLazy();
 });
 
 gameSearch.addEventListener('input', (e)=>{
-  renderGames(e.target.value);
+  const val = e.target.value;
+  localStorage.setItem('lastSearch', val);
+  fetchAllGamesLazy(val);
 });
 
 closeGames.addEventListener('click', ()=>{gamesModal.style.display='none';});
+
+// Restore last opened game
+const lastGame = localStorage.getItem('lastGame');
+if(lastGame) openOverlay(lastGame);
 </script>
 </body>
 </html>
